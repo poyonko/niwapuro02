@@ -1,0 +1,619 @@
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+using UnityEngine.UI;
+using System;
+using UnityEngine.EventSystems;
+
+public class GameManager : MonoBehaviour
+{
+    //定数定義
+    private const int MAX_ORB = 10;  //オーブ最大数
+   
+    private const int RESPAWN_TIME = 1;   //オーブが発生する秒数
+    private const int MAX_LEVEL = 2;      //お寺の最大レベル
+
+    //データセーブ用キー
+    private const string KEY_SCORE = "SCORE"; //スコア
+    private const string KEY_LEVEL = "LEVEL"; //レベル
+    private const string KEY_ORB = "ORB"; 　　//オーブ
+    private const string KEY_TIME = "TIME"; 　//時間
+
+
+    //オブジェクト参照
+    public GameObject orbPrefab;   //オーブプレハブ
+    public GameObject smokePrefab;  //煙プレハブ
+    public GameObject kusudamaPrefab;  //くす玉プレハブ
+    public GameObject CanvasGame;  //ゲームキャンパス
+    public GameObject TextScore;   //スコアテキスト
+    public GameObject TextScore2;   //スコアテキスト
+    public GameObject imageTemple; //お寺
+    public GameObject imageMokugyo; //木魚
+    public GameObject imageFusen; //風船
+
+
+
+    public AudioClip getScoreSE;   //効果音：スコアゲット
+    public AudioClip levelUpSE;　　//効果音：レベルアップ
+    public AudioClip ClearSE;　　　//効果音：クリア
+    public AudioClip TrackGO;   //効果音：トラック発射音
+
+    
+    
+
+
+
+
+
+
+
+    //メンバ変数
+    public int score = 0;         //現在のスコア（資金）
+    public int nextScore = 1000;   //レベルアップまでに必要なスコア
+
+    public float countdown = 5.0f;  //カウントダウン変数
+
+    private int score2 = 0;       //出荷数スコア
+    public int score4 = 0;    //資金スコア
+
+    private  int MAX_ORB2 = 10;  //オーブ最大数
+
+    private int currentOrb = 0;    //現在のオーブ数
+
+    private int currentOrb2 = 0;    //現在のオーブ数
+
+    private int templeLevel = 0;  //寺のレベル
+
+    private DateTime lastDateTime;  //前回オーブを生成した時間
+
+    private int[] nextScoreTable = new int[] { 1000, 2000, 3000 }; //レベルアップ値
+
+    private AudioSource audioSource;  //オーディオソース
+    private Vector3 now;   //トラックの座標
+
+    void Start()
+    {
+
+        PlayerPrefs.DeleteAll();
+
+        //時間をカウントダウンする
+        countdown -= Time.deltaTime;
+
+        //オーディオソース所得
+        audioSource = this.gameObject.GetComponent<AudioSource>();
+        currentOrb = MAX_ORB;
+        currentOrb2 = MAX_ORB2;
+
+        //初期オーブ作成
+        for (int i = 0; i < currentOrb; i++)
+        {
+            CreateOrb();
+
+        }
+
+        //初期設定
+        score = PlayerPrefs.GetInt(KEY_SCORE, 0);
+        templeLevel = PlayerPrefs.GetInt(KEY_LEVEL, 0);
+        currentOrb = PlayerPrefs.GetInt(KEY_ORB, 10);
+
+        //時間の復元
+        string time = PlayerPrefs.GetString(KEY_TIME, "");
+        if (time == "")
+        {
+            //時間がセーブされていない時間は現在時刻を使用
+            lastDateTime = DateTime.UtcNow;
+
+        }
+        else
+        {
+            long temp = Convert.ToInt64(time);
+            lastDateTime = DateTime.FromBinary(temp);
+        }
+
+
+
+
+        nextScore = nextScoreTable[templeLevel];
+        imageTemple.GetComponent<TempleManager>().SetTemplePicture(templeLevel);
+        imageTemple.GetComponent<TempleManager>().SetTempleScale(score, nextScore);
+        imageFusen.GetComponent<fusenhontai>().Fusensakuzyo();
+
+        RefreshScoreText();
+        RefreshScoreText2();
+
+        
+        
+        
+
+
+
+
+    }
+
+
+
+
+
+    void Update()
+    {
+
+        if (currentOrb < MAX_ORB)
+        {
+
+            
+
+            TimeSpan timeSpan = DateTime.UtcNow - lastDateTime;
+
+            if (timeSpan >= TimeSpan.FromSeconds(RESPAWN_TIME))
+            {
+                while (timeSpan >= TimeSpan.FromSeconds(RESPAWN_TIME))
+                {
+
+
+                   
+
+                    CreateNewOrb();
+                    
+            
+
+
+                    timeSpan -= TimeSpan.FromSeconds(RESPAWN_TIME);
+
+
+                }
+
+            }
+
+            
+
+            
+
+
+
+
+
+        }
+
+
+        if(currentOrb > MAX_ORB)
+        {
+
+            for (int i = 10; i < currentOrb;)
+            {
+
+                currentOrb--;
+
+
+            }
+
+
+
+        }
+    
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+    //新しいオーブの作成
+    public void CreateNewOrb2()
+    {
+
+        StartCoroutine("Tamagohuyasu");
+
+
+
+        SaveGameData();
+
+    }
+
+
+    //新しいオーブの作成
+    public void CreateNewOrb3()
+    { 
+        for (int i = 10; i < currentOrb;)
+        {
+
+            currentOrb--;
+
+
+
+        }
+
+
+    }
+
+
+
+
+    private IEnumerator Tamagohuyasu()
+    {
+
+        for (int i = 0; i < currentOrb2; i++)
+        {
+            CreateOrb2();
+
+        }
+        yield break;
+  
+
+
+
+
+    }
+
+
+        IEnumerator Tamagoherasu()
+        {
+
+            for (int i = 10; i < currentOrb2;)
+            {
+
+                currentOrb2--;
+
+
+            }
+            yield break;
+
+
+
+        }
+
+
+
+
+
+
+
+
+        //新しいオーブの作成
+        public void CreateNewOrb()
+    {
+
+       
+
+
+        
+        if (currentOrb >= MAX_ORB)
+        {
+
+            return;
+
+        }
+        CreateOrb();
+        currentOrb++;
+
+        SaveGameData();
+
+    }
+
+    
+
+
+
+    //オーブ作成
+    public void CreateOrb()
+    {
+        GameObject orb = (GameObject)Instantiate(orbPrefab);
+        orb.transform.SetParent(CanvasGame.transform, false);
+        orb.transform.localPosition = new Vector3(
+
+            UnityEngine.Random.Range(-230.0f, 230.0f),
+            UnityEngine.Random.Range(-180.0f, -500.0f), 0f);
+
+        //オーブの種類の設定
+        var trigger = imageFusen.AddComponent<EventTrigger>();
+
+
+        if (trigger == false)
+        { 
+        int kind = UnityEngine.Random.Range(0, templeLevel + 1);
+        switch (kind)
+        {
+            case 0:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.BLUE);
+                break;
+
+            case 1:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.GREEN);
+                break;
+
+            case 2:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.PURPLE);
+                break;
+
+        }
+        }
+        else
+        { 
+            int kind = UnityEngine.Random.Range(2, 2);
+            switch (kind)
+            {
+                case 0:
+                    orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.BLUE);
+                    break;
+
+                case 1:
+                    orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.GREEN);
+                    break;
+
+                case 2:
+                    orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.PURPLE);
+                    break;
+
+            }
+
+
+
+
+        }
+
+
+
+
+
+    }
+
+
+
+
+    //金たまごのみオーブ作成
+    public void CreateOrb2()
+    {
+
+        GameObject orb = (GameObject)Instantiate(orbPrefab);
+        orb.transform.SetParent(CanvasGame.transform, false);
+        orb.transform.localPosition = new Vector3(
+
+            UnityEngine.Random.Range(-230.0f, 230.0f),
+            UnityEngine.Random.Range(-180.0f, -500.0f), 0f);
+
+        //オーブの種類の設定
+        int kind = UnityEngine.Random.Range(2, 2);
+        switch (kind)
+        {
+            case 0:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.BLUE);
+                break;
+
+            case 1:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.GREEN);
+                break;
+
+            case 2:
+                orb.GetComponent<OrbManager>().SetKind(OrbManager.ORB_KIND.PURPLE);
+                break;
+
+        }
+
+
+
+
+    }
+
+
+    
+   
+
+
+
+
+
+
+
+
+
+    //オーブ入手
+    public void Getorb(int getScore)
+    {
+        audioSource.PlayOneShot(getScoreSE);
+        //木魚アニメ再生
+        AnimatorStateInfo stateInfo =
+            imageMokugyo.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0);
+        if (stateInfo.fullPathHash ==
+           Animator.StringToHash("Base Layer.get@ImageMokugyo"))
+        {
+            //すでに再生中なら先頭から
+            imageMokugyo.GetComponent<Animator>().Play(stateInfo.fullPathHash, 0, 0.0f);
+        }
+        else
+        {
+            imageMokugyo.GetComponent<Animator>().SetTrigger("isGetScore");
+
+        }
+
+
+
+
+        score2 += getScore;
+        score4 += getScore * 30;
+        RefreshScoreText2();
+
+        imageTemple.GetComponent<TempleManager>().SetTempleScale(score4, nextScore);
+
+
+
+
+
+
+
+
+
+
+
+
+
+        currentOrb--;
+
+        SaveGameData();
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //スコアテキスト更新2（収穫）
+    void RefreshScoreText2()
+    {
+        TextScore2.GetComponent<Text>().text =
+               "収穫数:" + score2;
+
+       
+    }
+
+
+
+
+
+    //スコアテキスト更新（資金）
+    public void RefreshScoreText()
+    {
+
+
+        
+        TextScore.GetComponent<Text>().text =
+               "資金:" + score4 + "     " + "目標金額:" + "/" + nextScore;
+        
+        
+        score2 = 0;
+
+        //レベルアップ値を越えないよう制限
+        if (score4 > nextScore)
+        {
+            score4 = nextScore;
+
+        }
+
+        //ゲームクリア判定2
+        if ((score4 == nextScore) && (templeLevel == MAX_LEVEL))
+        {
+            ClearEffect();
+
+
+        }
+
+
+    }
+
+
+   
+
+    //寺のレベル管理
+    public void TempleLevelUp()
+    {
+
+        if (score4 >= nextScore)
+        {
+
+            TempleLevelUpEffect();
+            imageMokugyo.GetComponent<mokugyomane>().trakkuidou();
+
+
+            if (templeLevel < MAX_LEVEL)
+            {
+                templeLevel++;
+
+                nextScore = nextScoreTable[templeLevel];
+                imageTemple.GetComponent<TempleManager>().SetTemplePicture(templeLevel);
+                
+
+            }
+
+            
+
+
+
+
+
+
+        }
+
+
+
+
+        
+
+
+
+
+
+        
+
+
+    }
+
+    //レベルアップ時の演出
+    void TempleLevelUpEffect()
+    {
+        GameObject smoke = (GameObject)Instantiate(smokePrefab);
+        smoke.transform.SetParent(CanvasGame.transform, false);
+        smoke.transform.SetSiblingIndex(2);
+
+
+        audioSource.PlayOneShot(levelUpSE);
+
+        Destroy(smoke, 0.5f);
+
+    }
+
+    //寺が最後まで育った時の演出
+    void ClearEffect()
+    {
+        GameObject kusudama = (GameObject)Instantiate(kusudamaPrefab);
+        kusudama.transform.SetParent(CanvasGame.transform, false);
+
+        audioSource.PlayOneShot(ClearSE);
+
+    }
+
+    //ゲームデータをセーブ
+    void SaveGameData()
+    {
+
+        PlayerPrefs.SetInt(KEY_SCORE, score);
+        PlayerPrefs.SetInt(KEY_LEVEL, templeLevel);
+        PlayerPrefs.SetInt(KEY_ORB, currentOrb);
+        PlayerPrefs.SetString(KEY_TIME, lastDateTime.ToBinary().ToString());
+
+        PlayerPrefs.Save();
+
+    }
+
+
+
+
+
+}
